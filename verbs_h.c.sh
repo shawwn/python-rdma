@@ -1,0 +1,1 @@
+gcc -E /usr/include/infiniband/verbs.h > ~/ml/python-rdma/verbs_h.c.out
