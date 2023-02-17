@@ -1,16 +1,16 @@
 # Copyright 2011 Obsidian Research Corp. GPLv2, see COPYING.
-import rdma;
-import abc;
+import rdma
+import abc
 import struct
 
 uint32_t = struct.Struct('>L')
 uint64_t = struct.Struct('>Q')
 
 def pack_array8(buf,offset,mlen,count,inp):
-    val = 0;
+    val = 0
     width = 0
     for I in range(count):
-        val = (val<<mlen) | inp[I];
+        val = (val<<mlen) | inp[I]
         width += mlen
         if width == 64:
             uint64_t.pack_into(buf, offset, val)
@@ -27,9 +27,9 @@ def unpack_array8(buf,offset,mlen,count,inp):
     """Starting at *offset* in *buf* assign *count* entries each *mlen* bits
     wide to indexes in *inp*."""
     # Sigh, so much overhead..
-    val = int(buf[offset:offset+(mlen*count)/8].encode("hex"),16);
+    val = int(buf[offset:offset+(mlen*count)/8].encode("hex"),16)
     for I in range(count):
-        inp[I] = (val >> ((count - 1 - I)*mlen)) & ((1 << mlen) - 1);
+        inp[I] = (val >> ((count - 1 - I)*mlen)) & ((1 << mlen) - 1)
     return
 
 class BinStruct(object, metaclass=abc.ABCMeta):
@@ -38,7 +38,7 @@ class BinStruct(object, metaclass=abc.ABCMeta):
     reduces the storage overhead from pickling and allows the library to
     upgrade to different internal storage methods in future.'''
     
-    __slots__ = ();
+    __slots__ = ()
 
     def __init__(self,buf = None,offset = 0):
         """*buf* is either an instance of :class:`BinStruct` or a :class:`bytes`
@@ -47,56 +47,56 @@ class BinStruct(object, metaclass=abc.ABCMeta):
         all attributes are set to 0."""
         if buf is not None:
             if isinstance(buf,BinStruct):
-                buf = bytearray(buf.MAD_LENGTH);
-                s.pack_into(buf);
+                buf = bytearray(buf.MAD_LENGTH)
+                s.pack_into(buf)
             if isinstance(buf,bytearray):
-                self.unpack_from(bytes(buf),offset);
+                self.unpack_from(bytes(buf),offset)
             else:
-                self.unpack_from(buf,offset);
+                self.unpack_from(buf,offset)
         else:
-            self.zero();
+            self.zero()
 
     def printer(self,F,offset=0,header=True,format="dump",**kwargs):
         """Pretty print the structure. *F* is the output file, *offset* is
         added to all printed offsets and *header* causes the display of the
         class type on the first line. *format* may be `dump` or `dotted`."""
         if header:
-            print("%s"%(self.__class__.__name__), file=F);
-        import rdma.IBA_describe;
+            print("%s"%(self.__class__.__name__), file=F)
+        import rdma.IBA_describe
         if format == "dotted":
-            return rdma.IBA_describe.struct_dotted(F,self,**kwargs);
-        return rdma.IBA_describe.struct_dump(F,self,offset=offset,**kwargs);
+            return rdma.IBA_describe.struct_dotted(F,self,**kwargs)
+        return rdma.IBA_describe.struct_dump(F,self,offset=offset,**kwargs)
 
     def __reduce__(self):
         """When pickling, store in packed format. This gives us greater
         flexability across versions of the library and takes less space."""
-        buf = bytearray(self.MAD_LENGTH);
-        self.pack_into(buf);
-        return (self.__class__,(bytes(buf),));
+        buf = bytearray(self.MAD_LENGTH)
+        self.pack_into(buf)
+        return (self.__class__,(bytes(buf),))
 
     def __cmp__(self,rhs):
         """Bytewise compare of two structures"""
-        lhsb = bytearray(self.MAD_LENGTH);
-        self.pack_into(lhsb);
-        rhsb = bytearray(rhs.MAD_LENGTH);
-        rhs.pack_into(rhsb);
-        return cmp(lhsb,rhsb);
+        lhsb = bytearray(self.MAD_LENGTH)
+        self.pack_into(lhsb)
+        rhsb = bytearray(rhs.MAD_LENGTH)
+        rhs.pack_into(rhsb)
+        return cmp(lhsb,rhsb)
 
     def compare(self,lhs,mask):
         """Compare *self* and *lhs* using the rules for component mask
         matching."""
         for k,v in self.COMPONENT_MASK.items():
             if not (mask & (1<<v)):
-                continue;
+                continue
 
             # FIXME: something smarter with selector
             if k.startswith("reserved") or k.endswith("Selector"):
-                continue;
+                continue
 
-            res = cmp(eval("self.%s"%(k)),eval("lhs.%s"%(k)));
+            res = cmp(eval("self.%s"%(k)),eval("lhs.%s"%(k)))
             if res != 0:
-                return res;
-        return 0;
+                return res
+        return 0
 
     # 'pure virtual' functions
     def zero(self):
@@ -119,9 +119,9 @@ class BinFormat(BinStruct):
     def describe(self):
         '''Return a short description of the RPC described by this format.'''
         import rdma.IBA as IBA
-        attr = IBA.ATTR_TO_STRUCT.get((self.__class__,self.attributeID));
+        attr = IBA.ATTR_TO_STRUCT.get((self.__class__,self.attributeID))
         return '%s %s(%u.%u) %s(%u)'%(IBA.const_str('MAD_METHOD_',self.method,True),
                                       self.__class__.__name__,
                                       self.mgmtClass,self.classVersion,
                                       '??' if attr is None else attr.__name__,
-                                      self.attributeID);
+                                      self.attributeID)

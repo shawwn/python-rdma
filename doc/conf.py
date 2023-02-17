@@ -45,8 +45,8 @@ copyright = '2011, Obsidian Research Corp'
 # built documents.
 #
 # The short X.Y version.
-import rdma;
-version = rdma.__version__;
+import rdma
+version = rdma.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 

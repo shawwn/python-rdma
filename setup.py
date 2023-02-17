@@ -10,23 +10,23 @@ from distutils.core import Command
 from distutils.extension import Extension
 
 import Cython.Distutils
-import Cython.Compiler.Version;
+import Cython.Compiler.Version
 
 class build_ext(Cython.Distutils.build_ext):
     def build_extensions(self):
-        self.codegen();
-        Cython.Distutils.build_ext.build_extensions(self);
+        self.codegen()
+        Cython.Distutils.build_ext.build_extensions(self)
 
     def get_enums(self,F):
         s = []
         skip = True
         for I in F.readlines():
             if I[0] == '#':
-                skip = I.find("infiniband/verbs.h") == -1;
+                skip = I.find("infiniband/verbs.h") == -1
             else:
                 if not skip:
                     s.append(I)
-        s = "".join(s);
+        s = "".join(s)
 
         enum = {}
         for m in re.finditer(r'enum\s+(\w+)\s*{(.*?)}', s, re.DOTALL):
@@ -42,7 +42,7 @@ class build_ext(Cython.Distutils.build_ext):
     def write_enums_pxi(self,F,enums):
         sep = '\n' + ' '*8
         print('\n\n'.join('    enum %s:%s' % (e,sep) + sep.join(v)
-                                for e,v in sorted(enums.items())), file=F);
+                                for e,v in sorted(enums.items())), file=F)
 
     def codegen(self):
         if not os.path.exists(self.build_temp):
@@ -51,15 +51,15 @@ class build_ext(Cython.Distutils.build_ext):
         verbs_h_o = verbs_h + ".out"
         with open(verbs_h,"wt") as F:
             F.write("#include <infiniband/verbs.h>")
-        self.compiler.preprocess(verbs_h,verbs_h_o);
+        self.compiler.preprocess(verbs_h,verbs_h_o)
 
         with open(verbs_h_o) as F:
-            enums = self.get_enums(F);
+            enums = self.get_enums(F)
         with open("rdma/libibverbs_enums.pxd","wt") as F:
-            print("cdef extern from 'infiniband/verbs.h':", file=F);
-            self.write_enums_pxi(F,enums);
+            print("cdef extern from 'infiniband/verbs.h':", file=F)
+            self.write_enums_pxi(F,enums)
         with open("rdma/libibverbs_enums.pxi","wt") as F:
-            self.write_enums_pxd(F,enums);
+            self.write_enums_pxd(F,enums)
 
 ibverbs_module = Extension('rdma.ibverbs', ['rdma/ibverbs.pyx'],
                            libraries=['ibverbs'],
@@ -98,7 +98,7 @@ class sphinx_build(Command):
 
     def finalize_options(self):
         self.set_undefined_options('build',
-                                   ('build_lib', 'build_lib'));
+                                   ('build_lib', 'build_lib'))
         self.sphinx_args.append('sphinx-build')
 
         if self.builder is None:
@@ -123,7 +123,7 @@ class sphinx_build(Command):
         if self.set is not None:
             self.sphinx_args.extend(['-D', self.set])
 
-        self.source_dir = "doc";
+        self.source_dir = "doc"
         if self.out_dir is None:
             self.out_dir = os.path.join('doc', self.builder)
 
@@ -153,9 +153,9 @@ class sphinx_build(Command):
                 sys.path.insert(0,os.path.realpath(self.build_lib))
                 sphinx.main(self.sphinx_args)
             finally:
-                sys.path = opath;
+                sys.path = opath
 
-version = imp.load_source('__tmp__','rdma/__init__.py').__version__;
+version = imp.load_source('__tmp__','rdma/__init__.py').__version__
 
 setup(name='rdma',
       version=version,

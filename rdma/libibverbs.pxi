@@ -98,7 +98,7 @@ qp_attr = tools.struct(
 
 async_event = collections.namedtuple(
      'async_event_port',
-     'event_type obj');
+     'event_type obj')
 
 srq_attr = collections.namedtuple(
     'srq_attr',
@@ -124,7 +124,7 @@ port_attr = collections.namedtuple(
      init_type_reply
      active_width
      active_speed
-     phys_state''');
+     phys_state''')
 
 device_attr = collections.namedtuple(
     'device_attr',
@@ -167,7 +167,7 @@ device_attr = collections.namedtuple(
     max_srq_sge
     max_pkeys
     local_ca_ack_delay
-    phys_port_cnt''');
+    phys_port_cnt''')
 
 sge = tools.struct(
     'sge',
