@@ -316,7 +316,7 @@ class GID(bytes):
             assert(len(s) == 16)
             return bytes.__new__(self,s)
         try:
-            return self,socket.inet_pton(socket.AF_INET6,util.tobytes(s.strip()).decode('utf-8'))
+            return bytes.__new__(self,socket.inet_pton(socket.AF_INET6,util.tobytes(s.strip()).decode('utf-8')))
         except OSError:
             raise ValueError("%r is not a valid GID"%(s))
 
