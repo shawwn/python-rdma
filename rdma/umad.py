@@ -3,6 +3,7 @@
 
 import rdma,rdma.tools,rdma.path,rdma.madtransactor
 import rdma.IBA as IBA
+import rdma.util as util
 import fcntl,struct,copy,errno,os,select
 from socket import htonl as cpu_to_be32
 from socket import htons as cpu_to_be16
@@ -112,7 +113,7 @@ class UMAD(rdma.tools.SysFSDevice,rdma.madtransactor.MADTransactor):
         self._agent_cache = {}
         self._agent_id_dqpn = {}
 
-        self._tid = int(os.urandom(4).encode("hex"),16)
+        self._tid = int(util.encode_hex(os.urandom(4)),16)
         self.end_port = parent
 
     def _get_new_TID(self):

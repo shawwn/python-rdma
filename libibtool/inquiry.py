@@ -4,6 +4,8 @@ import sys
 import copy
 import struct
 import rdma
+import codecs
+import rdma.util as util
 import rdma.IBA as IBA
 import rdma.IBA_describe as IBA_describe
 import rdma.madtransactor
@@ -316,7 +318,7 @@ def cmd_smpdump(argv,o):
             umad.reply_fmt.printer(sys.stdout)
         else:
             assert(len(res.buf) % 4 == 0)
-            ret = res.buf.encode("hex")
+            ret = util.encode_hex(res.buf)
             for I in range(len(ret)/4):
                 print(ret[I*4:I*4+4], end=' ')
                 if (I+1) % 8 == 0:
@@ -482,10 +484,10 @@ def cmd_decode_mad(argv,o):
         inp = inp.replace(" ","").replace("\n","").replace("\r","").replace("\t","")
         if o.verbosity >= 2:
             print("Input HEX value is:\n  ",repr(inp))
-        bytes = inp.decode("hex")
+        bytes = codecs.decode(inp, "hex")
     bytes = bytes[args.offset:]
     if o.verbosity >= 2:
-        print(bytes.encode("hex"))
+        print(util.encode_hex(bytes))
 
     if args.umad:
         bytes = decode_umad(o,bytes)

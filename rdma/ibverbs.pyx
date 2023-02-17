@@ -11,10 +11,35 @@ import rdma.devices
 import rdma.IBA as IBA
 import rdma.path
 
-from cpython.string cimport PyString_AsString
+# from cpython.string cimport PyString_AsString
 from libc.stdint cimport uint8_t
 
 cimport libibverbs as c
+
+# to_unicode.pyx
+# https://cython.readthedocs.io/en/latest/src/tutorial/strings.html#accepting-strings-from-python-code
+
+# from rdma.to_unicode cimport _text
+from cpython.version cimport PY_MAJOR_VERSION
+
+cdef unicode _text(s):
+    if type(s) is unicode:
+        # Fast path for most common case(s).
+        return <unicode>s
+
+    elif PY_MAJOR_VERSION < 3 and isinstance(s, bytes):
+        # Only accept byte strings as text input in Python 2.x, not in Py3.
+        return (<bytes>s).decode('ascii')
+
+    elif isinstance(s, unicode):
+        # We know from the fast path above that 's' can only be a subtype here.
+        # An evil cast to <unicode> might still work in some(!) cases,
+        # depending on what the further processing does.  To be safe,
+        # we can always create a copy instead.
+        return unicode(s)
+
+    else:
+        raise TypeError("Could not convert to unicode.")
 
 cdef extern from 'types.h':
     ctypedef void **const_void_ptr_ptr
@@ -108,7 +133,8 @@ cdef to_ah_attr(c.ibv_ah_attr *cattr, object attr):
                 raise TypeError("attr.grh must be a global_route")
             if not isinstance(attr.grh.dgid, IBA.GID):
                 raise TypeError("attr.grh.dgid must be an IBA.GID")
-            tmp = <uint8_t *>PyString_AsString(attr.DGID)
+            py_byte_string = _text(attr.DGID).encode('UTF-8')
+            tmp = <uint8_t *>py_byte_string
             for 0 <= i < 16:
                 cattr.grh.dgid.raw[i] = tmp[i]
             cattr.grh.flow_label = attr.grh.flow_label
@@ -124,7 +150,8 @@ cdef to_ah_attr(c.ibv_ah_attr *cattr, object attr):
     elif isinstance(attr, rdma.path.IBPath):
         cattr.is_global = attr.has_grh
         if attr.DGID is not None:
-            tmp = <uint8_t *>PyString_AsString(attr.DGID)
+            py_byte_string = _text(attr.DGID).encode('UTF-8')
+            tmp = <uint8_t *>py_byte_string
             for 0 <= i < 16:
                 cattr.grh.dgid.raw[i] = tmp[i]
         if cattr.is_global:
@@ -312,6 +339,7 @@ cdef class Context:
         cdef c.ibv_device **dev_list
         cdef int i
         cdef int count
+        cdef bytes name
 
         if isinstance(parent,rdma.devices.RDMADevice):
             self.node = parent
@@ -326,8 +354,12 @@ cdef class Context:
                                 "Failed to get device list")
 
         try:
+            name = self.node.name.encode("UTF-8")
+            # print 'searching for %s' % name
+
             for 0 <= i < count:
-                if dev_list[i].name == self.node.name:
+                # print 'device %d name %s' % (i, dev_list[i].name)
+                if dev_list[i].name == name:
                     break
             else:
                 raise rdma.RDMAError("RDMA verbs device %r not found."%(self.node))

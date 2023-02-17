@@ -3,8 +3,11 @@
 # NOTE: The docstrings for this module are specially processed in the
 # documentation take some care when editing.
 
-import socket,sys
+import socket
+import sys
+import codecs
 import rdma.binstruct
+import rdma.util as util
 
 #: Node Type Constants
 # see NodeInfo.nodeType
@@ -241,8 +244,10 @@ class GUID(bytes):
         if isinstance(s,GUID):
             return s
         if isinstance(s,int) or isinstance(s,int):
-            s = ("%016x"%(s)).decode("hex")
+            s = codecs.decode("%016x" % s, "hex")
             raw = True
+        if isinstance(s,str):
+            s = s.encode('utf-8')
         if raw:
             assert(len(s) == 8)
             return bytes.__new__(self,s)
@@ -251,25 +256,25 @@ class GUID(bytes):
         if len(v) != 16:
             raise ValueError("%r is not a valid GUID"%(s))
         try:
-            return bytes.__new__(self,v.decode("hex"))
+            return bytes.__new__(self,codecs.decode(v, "hex"), 'utf8')
         except TypeError:
             raise ValueError("%r is not a valid GUID"%(s))
 
     def pack_into(self,buf,offset=0):
         """Pack the value into a byte array."""
-        buf[offset:offset+8] = bytes.__str__(self)
+        buf[offset:offset+8] = self
 
     def __str__(self):
         """Return a printable string of the GUID."""
-        tmp = self.encode("hex")
+        tmp = util.encode_hex(self)
         return "%s:%s:%s:%s"%(tmp[0:4],tmp[4:8],tmp[8:12],tmp[12:16])
     def __repr__(self):
         return "GUID('%s')"%(self.__str__())
     def __int__(self):
-        return int(bytes.__str__(self).encode("hex"),16)
+        return int(util.encode_hex(self),16)
 
     def __reduce__(self):
-        return (GUID,(bytes.__str__(self),True))
+        return (GUID,(bytes(self),True))
 
 #: All zeros GUID value.
 ZERO_GUID = GUID('\x00\x00\x00\x00\x00\x00\x00\x00',raw=True)
@@ -296,30 +301,32 @@ class GID(bytes):
             if prefix is None:
                 return ZERO_GID
             if isinstance(prefix,GID):
-                prefix = bytes.__str__(prefix)[:8]
+                prefix = bytes(prefix)[:8]
             elif isinstance(prefix,GUID):
-                prefix = bytes.__str__(prefix)
+                prefix = bytes(prefix)
             elif isinstance(prefix,int) or isinstance(prefix,int):
-                prefix = ("%016x"%(prefix)).decode("hex")
-            return bytes.__new__(self,prefix + bytes.__str__(guid))
+                prefix = codecs.decode("%016x" % prefix, "hex")
+            return bytes.__new__(self,prefix + guid)
 
         if isinstance(s,GID):
             return s
+        if isinstance(s,str):
+            s = s.encode('utf-8')
         if raw:
             assert(len(s) == 16)
             return bytes.__new__(self,s)
         try:
-            return bytes.__new__(self,socket.inet_pton(socket.AF_INET6,s.strip()))
-        except:
+            return self,socket.inet_pton(socket.AF_INET6,util.tobytes(s.strip()).decode('utf-8'))
+        except OSError:
             raise ValueError("%r is not a valid GID"%(s))
 
     def pack_into(self,buf,offset=0):
         """Pack the value into a byte array."""
-        buf[offset:offset+16] = bytes.__str__(self)
+        buf[offset:offset+16] = bytes(self)
 
     def __str__(self):
         """Return a printable string of the GID."""
-        return socket.inet_ntop(socket.AF_INET6,bytes.__str__(self))
+        return socket.inet_ntop(socket.AF_INET6,bytes(self))
     def __repr__(self):
         return "GID('%s')"%(self.__str__())
     def guid(self):
@@ -329,10 +336,10 @@ class GID(bytes):
         """Return the prefix portion of the GID."""
         return GUID(bytes.__getslice__(self,0,8),raw=True)
     def __int__(self):
-        return int(bytes.__str__(self).encode("hex"),16)
+        return int(util.encode_hex(self),16)
 
     def __reduce__(self):
-        return (GID,(bytes.__str__(self),True))
+        return (GID,(bytes(self),True))
 
 
 #: All zeros GID value.

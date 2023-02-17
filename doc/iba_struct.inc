@@ -1011,7 +1011,7 @@ Subnet Administration (15)
 
 .. class:: rdma.IBA.SAHeader
 
-    An *aggregation* of: MADHeader, RMPPHeader
+    An *aggregation* of: RMPPHeader, MADHeader
 
     SA Header (section 15.2.1.1)
 
@@ -2190,7 +2190,7 @@ Vendor Specific Management (16.5)
 
 .. class:: rdma.IBA.VendOUIFormat
 
-    An *aggregation* of: MADHeader, RMPPHeader
+    An *aggregation* of: RMPPHeader, MADHeader
 
     Vendor Specific Management MAD Format with OUI (section 16.5.1)
 

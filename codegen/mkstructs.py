@@ -43,7 +43,7 @@ def safeUpdateCtx(path):
         os.unlink(tmp)
     except: pass
 
-    f = file(tmp,"wt")
+    f = open(tmp,"wt")
     yield f
     f.close()
     os.rename(tmp,path)
@@ -179,7 +179,7 @@ class Struct(object):
         self.packCount = 0
 
         off = 0
-        for I in xml.getiterator("mb"):
+        for I in xml.iter("mb"):
             self.mb.append((I.text or "",Type(I,off)))
             off = off + self.mb[-1][1].lenBits()
         assert(sum((I[1].lenBits() for I in self.mb),0) <= self.size*8)

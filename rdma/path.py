@@ -3,6 +3,7 @@ import os
 import sys
 import rdma
 import rdma.IBA as IBA
+import rdma.util as util
 
 class Path(object):
     """Describe an RDMA path. This also serves to cache the path for cases
@@ -558,9 +559,9 @@ def fill_path(qp,path,max_rd_atomic=255):
     # Maximum number of RD atomics responder resources the HCA can allocate
     path.drdatomic = min(path.drdatomic,devinfo.max_qp_rd_atom,max_rd_atomic)
     if path.sqpsn == 0:
-        path.sqpsn = int(os.urandom(3).encode("hex"),16)
+        path.sqpsn = int(util.encode_hex(os.urandom(3)),16)
     if path.dqpsn == 0:
-        path.dqpsn = int(os.urandom(3).encode("hex"),16)
+        path.dqpsn = int(util.encode_hex(os.urandom(3)),16)
 
 def from_spec_string(s):
     """Construct a *Path* (or derived) instance from it's `repr` string.

@@ -1,4 +1,5 @@
 # Copyright 2011 Obsidian Research Corp. GPLv2, see COPYING.
+import argparse
 import optparse
 import pickle
 import socket
@@ -37,8 +38,7 @@ class Endpoint(object):
                              max_send_sge=opt.num_sge,
                              max_recv_sge=1)
         self.mem = mmap(-1, opt.size)
-        self.mr = self.pd.mr(self.mem,
-                             ibv.IBV_ACCESS_LOCAL_WRITE|ibv.IBV_ACCESS_REMOTE_WRITE)
+        self.mr = self.pd.mr(self.mem, ibv.IBV_ACCESS_LOCAL_WRITE|ibv.IBV_ACCESS_REMOTE_WRITE)
 
     def __enter__(self):
         return self
@@ -103,9 +103,7 @@ class Endpoint(object):
 
 def client_mode(hostname,opt,dev):
     with Endpoint(opt,dev) as end:
-        ret = socket.getaddrinfo(hostname,str(opt.ip_port),opt.af,
-                                 socket.SOCK_STREAM)
-        ret = ret[0]
+        ret, = socket.getaddrinfo(hostname,str(opt.ip_port),opt.af, socket.SOCK_STREAM)
         with contextlib.closing(socket.socket(ret[0],ret[1])) as sock:
             if opt.debug >= 1:
                 print(("Connecting to %r %r"%(ret[4][0],ret[4][1])))
@@ -115,11 +113,7 @@ def client_mode(hostname,opt,dev):
             rdma.path.fill_path(end.qp,path,max_rd_atomic=0)
             path.reverse(for_reply=False)
 
-            sock.send(pickle.dumps(infotype(path=path,
-                                            addr=end.mr.addr,
-                                            rkey=end.mr.rkey,
-                                            size=opt.size,
-                                            iters=opt.iters)))
+            sock.send(pickle.dumps(infotype(path=path, addr=end.mr.addr, rkey=end.mr.rkey, size=opt.size, iters=opt.iters)))
             buf = sock.recv(1024)
             peerinfo = pickle.loads(buf)
 
@@ -142,9 +136,7 @@ def client_mode(hostname,opt,dev):
             sock.recv(1024)
 
 def server_mode(opt,dev):
-    ret = socket.getaddrinfo(None,str(opt.ip_port),opt.af,
-                             socket.SOCK_STREAM,0,
-                             socket.AI_PASSIVE)
+    ret = socket.getaddrinfo(None,str(opt.ip_port),opt.af, socket.SOCK_STREAM,0, socket.AI_PASSIVE)
     ret = ret[0]
     with contextlib.closing(socket.socket(ret[0],ret[1])) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -189,7 +181,7 @@ def server_mode(opt,dev):
                 s.shutdown(socket.SHUT_WR)
                 s.recv(1024)
 
-def cmd_rdma_bw(argv,o):
+def cmd_rdma_bw(argv,o: argparse.ArgumentParser):
     """Perform a RDMA bandwidth test over a RC QP.
        Usage: %prog [SERVER]
 
@@ -198,32 +190,32 @@ def cmd_rdma_bw(argv,o):
        process. This connection is used to exchange the connection
        information."""
 
-    o.add_option("-C","--Ca",dest="CA",
-                 help="RDMA device to use. Specify a device name or node GUID")
-    o.add_option("-P","--Port",dest="port",
-                 help="RDMA end port to use. Specify a GID, port GUID, DEVICE/PORT or port number.")
-    o.add_option('-p', '--port', default=4444, type="int", dest="ip_port",
-                 help="listen on/connect to port PORT")
-    o.add_option('-6', '--ipv6', action="store_const",
-                 const=socket.AF_INET6, dest="af", default=0,
-                 help="use IPv6")
-    o.add_option('-b', '--bidirectional', default=False, action="store_true",
-                 help="measure bidirectional bandwidth")
-    o.add_option('-d', '--ib-dev', metavar="DEV", dest="CA",
-                 help="use IB device DEV")
-    o.add_option('-i', '--ib-port', type="int", metavar="PORT", dest="port",
-                 help="use port PORT of IB device")
-    o.add_option('-s', '--size', default=1024*1024, type="int", metavar="BYTES",
-                 help="exchange messages of size BYTES,(client only)")
-    o.add_option('-e', '--num-sge', default=1, type="int", metavar="NUM",
-                 help="Number of sges to use.")
-    o.add_option('-t', '--tx-depth', default=100, type="int", help="number of exchanges")
-    o.add_option('-n', '--iters', default=1000, type="int",
-                 help="number of exchanges (client only)")
-    o.add_option("--debug",dest="debug",action="count",default=0,
-                 help="Increase the debug level, each -d increases by 1.")
+    o.add_argument("-C","--Ca",dest="CA",
+                   help="RDMA device to use. Specify a device name or node GUID")
+    o.add_argument("-P","--Port",dest="port",
+                   help="RDMA end port to use. Specify a GID, port GUID, DEVICE/PORT or port number.")
+    o.add_argument('-p', '--port', default=4444, type=int, dest="ip_port",
+                   help="listen on/connect to port PORT")
+    o.add_argument('-6', '--ipv6', action="store_const",
+                   const=socket.AF_INET6, dest="af", default=0,
+                   help="use IPv6")
+    o.add_argument('-b', '--bidirectional', default=False, action="store_true",
+                   help="measure bidirectional bandwidth")
+    o.add_argument('-d', '--ib-dev', metavar="DEV", dest="CA",
+                   help="use IB device DEV")
+    o.add_argument('-i', '--ib-port', type=int, metavar="PORT", dest="port",
+                   help="use port PORT of IB device")
+    o.add_argument('-s', '--size', default=1024*1024, type=int, metavar="BYTES",
+                   help="exchange messages of size BYTES,(client only)")
+    o.add_argument('-e', '--num-sge', default=1, type=int, metavar="NUM",
+                   help="Number of sges to use.")
+    o.add_argument('-t', '--tx-depth', default=100, type=int, help="number of exchanges")
+    o.add_argument('-n', '--iters', default=1000, type=int,
+                   help="number of exchanges (client only)")
+    o.add_argument("--debug",dest="debug",action="count",default=0,
+                   help="Increase the debug level, each -d increases by 1.")
 
-    (args,values) = o.parse_args(argv)
+    (args,values) = o.parse_known_args(argv)
     lib = LibIBOpts(o,args,1,(str,))
 
     if len(values) == 1:

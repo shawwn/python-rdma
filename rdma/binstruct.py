@@ -2,6 +2,7 @@
 import rdma
 import abc
 import struct
+from rdma import util
 
 uint32_t = struct.Struct('>L')
 uint64_t = struct.Struct('>Q')
@@ -27,7 +28,7 @@ def unpack_array8(buf,offset,mlen,count,inp):
     """Starting at *offset* in *buf* assign *count* entries each *mlen* bits
     wide to indexes in *inp*."""
     # Sigh, so much overhead..
-    val = int(buf[offset:offset+(mlen*count)/8].encode("hex"),16)
+    val = int(util.encode_hex(buf[offset:offset+(mlen*count)/8]),16)
     for I in range(count):
         inp[I] = (val >> ((count - 1 - I)*mlen)) & ((1 << mlen) - 1)
     return
