@@ -222,7 +222,7 @@ def run_rpm_build(args,spec_file,env):
         # rpmbuild complains if we do not have an entry in passwd and group
         # for the user we are going to use to do the build.
         with open(os.path.join(tmpdir,"go.py"),"w") as F:
-            print >> F,"""
+            print("""
 import os;
 with open("/etc/passwd","a") as F:
    print >> F, {passwd!r};
@@ -233,7 +233,7 @@ os.setuid({uid:d});
 """.format(passwd=":".join(str(I) for I in pwd.getpwuid(os.getuid())),
            group=":".join(str(I) for I in grp.getgrgid(os.getgid())),
            uid=os.getuid(),
-           gid=os.getgid());
+           gid=os.getgid()), file=F);
 
             # Transfer ccache options into a macro, rpmbuild clears the environment
             ccopts = [I for I in opts if I.startswith("CCACHE_")];
@@ -244,8 +244,8 @@ os.setuid({uid:d});
                 bopts = [];
             bopts.extend(["-bb",spec_file]);
 
-            print >> F,'os.execlp("rpmbuild","rpmbuild",%s)'%(
-                ",".join(repr(I) for I in bopts));
+            print('os.execlp("rpmbuild","rpmbuild",%s)'%(
+                ",".join(repr(I) for I in bopts)), file=F);
 
         if args.run_shell:
             opts.append("-ti");
@@ -258,10 +258,10 @@ os.setuid({uid:d});
 
         docker_cmd(args,*opts)
 
-        print
+        print()
         for path,jnk,files in os.walk(os.path.join(tmpdir,"RPMS")):
             for I in files:
-                print "Final RPM: ",os.path.join("..",I);
+                print("Final RPM: ",os.path.join("..",I));
                 shutil.move(os.path.join(path,I),
                             os.path.join("..",I));
 
@@ -297,7 +297,7 @@ def run_deb_build(args,env):
         # the build as non-root so things like ccache and dart pub cache
         # create cache files with the right user.
         with open(os.path.join(tmpdir,"go.py"),"w") as F:
-            print >> F,"""
+            print("""
 import os,sys;
 child = os.fork();
 if child == 0:
@@ -309,7 +309,7 @@ if status != 0:
    sys.exit(status);
 os.execlp("debian/rules","debian/rules","binary");
 """.format(uid=os.getuid(),
-           gid=os.getgid());
+           gid=os.getgid()), file=F);
 
         if args.run_shell:
             opts.append("-ti");
@@ -322,10 +322,10 @@ os.execlp("debian/rules","debian/rules","binary");
 
         docker_cmd(args,*opts);
 
-        print
+        print()
         for I in os.listdir(tmpdir):
             if I.endswith(".deb"):
-                print "Final DEB: ",os.path.join("..",I);
+                print("Final DEB: ",os.path.join("..",I));
                 shutil.move(os.path.join(tmpdir,I),
                             os.path.join("..",I));
 
@@ -361,7 +361,7 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(title="Sub Commands");
 
     funcs = globals();
-    for k,v in funcs.items():
+    for k,v in list(funcs.items()):
         if k.startswith("cmd_") and inspect.isfunction(v):
             sparser = subparsers.add_parser(k[4:].replace('_','-'),
                                             help=v.__doc__);

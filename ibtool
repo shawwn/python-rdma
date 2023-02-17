@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     argv = sys.argv[2:];
     cmd = sys.argv[1];
-    if commands.has_key(cmd):
+    if cmd in commands:
         func,shown = get_cmd_func(cmd);
         o = MyOptParse(func);
         try:
@@ -96,7 +96,7 @@ if __name__ == '__main__':
                 sys.exit(100);
             sys.exit(0);
         except CmdError as err:
-            print "E:",err;
+            print("E:",err);
             if o.verbosity >= 2:
                 raise;
         except rdma.MADError as err:
@@ -104,7 +104,7 @@ if __name__ == '__main__':
             if o.verbosity >= 2:
                 raise;
         except rdma.RDMAError as err:
-            print "E:",err;
+            print("E:",err);
             if o.verbosity >= 2:
                 raise;
         sys.exit(100);

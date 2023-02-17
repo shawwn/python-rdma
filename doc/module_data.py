@@ -76,7 +76,7 @@ class ModuleDataDirective(sphinx.util.compat.Directive):
                 continue;
 
             member = getattr(self.object,membername);
-            if not (isinstance(member,int) or isinstance(member,long)):
+            if not (isinstance(member,int) or isinstance(member,int)):
                 continue;
             doc = attr_visitor.collected.get((namespace,membername));
             if doc is not None:

@@ -37,8 +37,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'python-rdma'
-copyright = u'2011, Obsidian Research Corp'
+project = 'python-rdma'
+copyright = '2011, Obsidian Research Corp'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -175,8 +175,8 @@ htmlhelp_basename = 'python-rdmadoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'python-rdma.tex', u'python-rdma Documentation',
-   u'Jason Gunthorpe', 'manual'),
+  ('index', 'python-rdma.tex', 'python-rdma Documentation',
+   'Jason Gunthorpe', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

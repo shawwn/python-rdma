@@ -3,10 +3,11 @@
 # ./mkstructs.py -x iba_transport.xml -x iba_12.xml -x iba_13_4.xml -x iba_13_6.xml -x iba_14.xml -x iba_15.xml -x iba_16_1.xml -x iba_16_3.xml -x iba_16_4.xml -x iba_16_5.xml  -o ../rdma/IBA_struct.py -r ../doc/iba_struct.inc
 '''This script converts the XML descriptions of IB structures into python
    classes and associated codegen'''
-from __future__ import with_statement;
+;
 import sys,optparse,re,os;
 from xml.etree import ElementTree;
 from contextlib import contextmanager;
+from functools import reduce
 
 # From IBA.py - including this by name creates a circular module dependency
 # that is easier to break this way.
@@ -435,18 +436,18 @@ class Struct(object):
 
         self.slots = ','.join(repr(I[0]) for I in self.mb if I[1].lenBits() != 0);
         if self.is_format:
-            print >> F,"class %s(rdma.binstruct.BinFormat):"%(self.name);
+            print("class %s(rdma.binstruct.BinFormat):"%(self.name), file=F);
         else:
-            print >> F,"class %s(rdma.binstruct.BinStruct):"%(self.name);
-        print >> F,"    '''%s'''"%(self.desc);
-        print >> F,"    __slots__ = (%s);"""%(self.slots);
+            print("class %s(rdma.binstruct.BinStruct):"%(self.name), file=F);
+        print("    '''%s'''"%(self.desc), file=F);
+        print("    __slots__ = (%s);"""%(self.slots), file=F);
 
         for name,value in self.get_properties():
-            print >> F, "    %s = %s"%(name,value);
+            print("    %s = %s"%(name,value), file=F);
 
         for I in self.funcs:
-            print >> F, "   ", "\n    ".join(I);
-            print >> F
+            print("   ", "\n    ".join(I), file=F);
+            print(file=F)
 
     def as_RST_pos(self,off):
         if off % 8 == 0:
@@ -454,16 +455,16 @@ class Struct(object):
         return "%u[%u]"%(off//8,off%8);
 
     def asRST(self,F):
-        print >> F,".. class:: rdma.IBA.%s"%(self.name)
-        print >> F,""
+        print(".. class:: rdma.IBA.%s"%(self.name), file=F)
+        print("", file=F)
         if self.inherits:
-            print >> F,"    An *aggregation* of: %s"%(", ".join(I.name for I in self.inherits.itervalues()))
-            print >> F,""
-        print >> F,"   ",self.desc
-        print >> F,""
+            print("    An *aggregation* of: %s"%(", ".join(I.name for I in self.inherits.values())), file=F)
+            print("", file=F)
+        print("   ",self.desc, file=F)
+        print("", file=F)
         for name,value in self.get_properties():
-            print >> F, "    .. attribute:: %s = %s"%(name,value);
-        print >> F,""
+            print("    .. attribute:: %s = %s"%(name,value), file=F);
+        print("", file=F)
 
         rows = [("Member","Position","Type")];
         for name,ty in self.mb:
@@ -474,8 +475,8 @@ class Struct(object):
                          ty.type_desc()));
         if rows:
             for I in zip(rst_tableize(rows,0),rst_tableize(rows,1),rst_tableize(rows,2)):
-                print >> F,"   "," ".join(I)
-            print >> F,""
+                print("   "," ".join(I), file=F)
+            print("", file=F)
 
 parser = optparse.OptionParser(usage="%prog")
 parser.add_option('-x', '--xml', dest='xml', action="append")
@@ -521,7 +522,7 @@ with safeUpdateCtx(options.struct_out) as F:
             p = I.format.rpartition('.');
             if p[0]:
                 to_import.add(p[0]);
-    print >> F, "import %s"%(",".join(sorted(to_import)));
+    print("import %s"%(",".join(sorted(to_import))), file=F);
     for I in structs:
         I.asPython(F);
 
@@ -533,11 +534,11 @@ with safeUpdateCtx(options.struct_out) as F:
           assert fmts.get(J[0],J[1].fmt) == J[1].fmt;
           if J[1].fmt != "%r":
              fmts[J[0]] = J[1].fmt;
-    print >> F, "MEMBER_FORMATS = %r;"%(fmts);
+    print("MEMBER_FORMATS = %r;"%(fmts), file=F);
 
     res = (I for I in structs if I.is_format);
-    print >> F, "CLASS_TO_STRUCT = {%s};"%(",\n\t".join("(%u,%u):%s"%(
-        int(I.mgmtClass,0),(1<<8) | int(I.mgmtClassVersion,0),I.name) for I in res));
+    print("CLASS_TO_STRUCT = {%s};"%(",\n\t".join("(%u,%u):%s"%(
+        int(I.mgmtClass,0),(1<<8) | int(I.mgmtClassVersion,0),I.name) for I in res)), file=F);
 
     res = {}
     for I in structs:
@@ -548,8 +549,8 @@ with safeUpdateCtx(options.struct_out) as F:
     for I in structs:
         if I.format is not None and I.attributeID is not None:
             res[I.format,I.attributeID] = I;
-    print >> F, "ATTR_TO_STRUCT = {%s};"%(",\n\t".join("(%s,%u):%s"%(
-        k[0],k[1],v.name) for k,v in sorted(res.iteritems())));
+    print("ATTR_TO_STRUCT = {%s};"%(",\n\t".join("(%s,%u):%s"%(
+        k[0],k[1],v.name) for k,v in sorted(res.items()))), file=F);
 
 if options.rst_out is not None:
  with safeUpdateCtx(options.rst_out) as F:
@@ -571,9 +572,9 @@ if options.rst_out is not None:
     for I,name in sects:
         if name != last:
             header = "%s (%s)"%(name,".".join("%s"%(x) for x in I));
-            print >> F, header;
-            print >> F, "^"*len(header);
-            print >> F
+            print(header, file=F);
+            print("^"*len(header), file=F);
+            print(file=F)
             last = name;
         for J in lst:
             if J not in done and is_sect_prefix(I,J.sect):
@@ -581,9 +582,9 @@ if options.rst_out is not None:
                 done.add(J);
 
     header = "Miscellaneous IBA Structures";
-    print >> F, header;
-    print >> F, "^"*len(header);
-    print >> F
+    print(header, file=F);
+    print("^"*len(header), file=F);
+    print(file=F)
     for J in lst:
         if J not in done:
                 J.asRST(F);
